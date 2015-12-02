@@ -17,9 +17,9 @@ struct SquarePulse {
 
 void
 setupSquarePulse(struct SquarePulse* sp, int pin,
-                 int start_time, double dur, double freq)
+                 double start_time, double dur, double freq)
 {
-  sp->attack_time = (double) start_time;
+  sp->attack_time = start_time * DUR_SCALE;
   sp->duration    = dur * DUR_SCALE;
   sp->end_time    = sp->duration + sp->attack_time;
   sp->next_write  = sp->attack_time;
@@ -45,10 +45,12 @@ playSquarePulse (struct SquarePulse* sp)
 
     switch (sp->wave_state) {
       case 1:
-        digitalWrite(sp->pin, HIGH);
+        //digitalWrite(sp->pin, HIGH);
+        analogWrite(sp->pin, random(90,100));
         break;
       case 0:
-        digitalWrite(sp->pin, LOW);
+        //digitalWrite(sp->pin, LOW);
+        analogWrite(sp->pin, 0);
         break;
       default:
         break;
@@ -60,7 +62,7 @@ playSquarePulse (struct SquarePulse* sp)
 
 // Reschedule a square pulse
 void
-rescheduleSquarePulse (struct SquarePulse* sp, int dur)
+rescheduleSquarePulse (struct SquarePulse* sp, double dur)
 {
   double now = micros();
   sp->attack_time = (dur * DUR_SCALE) + now;
@@ -73,6 +75,17 @@ void
 muteSquarePulse (struct SquarePulse* sp)
 {
   digitalWrite(sp->pin, LOW);
+}
+
+void
+setSquarePulseDur (struct SquarePulse* sp, double dur)
+{
+  sp->duration = dur * DUR_SCALE;
+}
+
+void setSquarePulseFreq (struct SquarePulse* sp, double freq)
+{
+  sp->freq = freq;
 }
 #endif
 
