@@ -9,13 +9,17 @@ int pitch_idx = 0;
 
 struct SquarePulse sp;
 struct SquarePulse sp2;
+struct BitPulse bp;
 
 double now;
 
 void 
 setup()
 {
-  setupSquarePulse(&sp, 6, 1.0, 1.0, freqs[0]);
+  Serial.begin(9600);
+  setupBitPulse(&bp, 6, 1.0, 10.0);
+
+  //setupSquarePulse(&sp, 6, 1.0, 1.0, freqs[0]);
   //setupSquarePulse(&sp2, 6, 0.0, 0.5, freqs[1]);
 }
 
@@ -23,10 +27,12 @@ void
 loop()
 {
   now = micros();
-  playSquarePulse(&sp);
-  if (now >= next_freq) 
-  sp.freq = freqs[(pitch_idx = (pitch_idx + 1) % n_freqs)];
-  rescheduleSquarePulse(&sp, 0.25);
+  playBitPulse(&bp);
+  rescheduleBitPulse(&bp, 0.25);
+
+  // playSquarePulse(&sp);
+  // sp.freq = freqs[(pitch_idx = (pitch_idx + 1) % n_freqs)];
+  // rescheduleSquarePulse(&sp, 0.25);
 
   // playing with a "second voice"
   // playSquarePulse(&sp2);
