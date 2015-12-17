@@ -1,5 +1,10 @@
 #include "../lib/pulse.h"
 
+// TODO: Investigate different ways of generating form:
+//        - Patterns of logic application
+//        - Patterns of updating the wave state
+//        - Convert sample rate into enum for easier switching
+
 // pitch
 int n_freqs = 6;
 //float freqs[] = { 955, 1911, 1432, 1276, 1073, 758 };
@@ -17,7 +22,8 @@ void
 setup()
 {
   Serial.begin(9600);
-  setupBitPulse(&bp, 6, 1.0, 10.0);
+  setupBitPulse(&bp, 6, 1.0, 100.0);
+  //setupBitPulse(&bp, 7, 1.0, 100.0);
 
   //setupSquarePulse(&sp, 6, 1.0, 1.0, freqs[0]);
   //setupSquarePulse(&sp2, 6, 0.0, 0.5, freqs[1]);

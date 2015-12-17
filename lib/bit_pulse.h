@@ -19,7 +19,7 @@ struct BitPulse {
   double end_time;
 
   int pin;
-  int wave_state;
+  unsigned long wave_state;
 };
 
 // FORWARD DECS
@@ -38,22 +38,23 @@ setupBitPulse(struct BitPulse* sp, int pin,
   sp->next_write  = start_time * SECOND;
   sp->duration    = dur * SECOND;
   sp->end_time    = sp->duration + sp->next_write;
-  sp->wave_state  = 1; // init to one to avoid zero-only state
+  sp->wave_state  = 0; // init to one to avoid zero-only state
   sp->pin         = pin;
   pinMode(pin, OUTPUT);
 }
 
+// Assemble "words" into a sentence
 void 
 playBitPulse (struct BitPulse* sp)
 {
   double now = micros();
+  double out;
 
   if (now >= sp->next_write) {
-    sp->wave_state = (sp->wave_state + 1) & 255;
-    double out = (sin(sp->wave_state << 1) + cos(sp->wave_state >> 2)) * 100;
-    //double out = (sp->wave_state >> 1) + sin(sp->wave_state) * (sp->wave_state >> 4);
-    //Serial.println(out);
-    analogWrite(sp->pin, out);
+    sp->wave_state++;
+    out = ((sin(sp->wave_state >> 1) + cos(sp->wave_state >> 2)) 
+        + (sp->wave_state >> (sp->wave_state | 100))) * 10;
+    analogWrite(sp->pin, out); 
     sp->next_write = now + SAMPLE;
   }
 }
