@@ -1,4 +1,4 @@
-#include "bit_pulse2.h"
+#include "bit_pulse.h"
 #include "reader.h"
 #include "sender.h"
 
@@ -65,8 +65,8 @@ loop()
   now = micros();
 
   // PLAY AUDIO
-  pulse.play(now);
-  
+  pulse.play(now, msgLen, mBuf);
+  //pulse.play(now, leaderLen, lBuf);
 
   // MESSAGE HANDLING
   sendOne.send2(now, &PORTD, B00001000); // set pin 3 to on

@@ -17,10 +17,10 @@ class BitPulse
     BitPulse (uint16_t pin);
     ~BitPulse () {};
 
-    void play (uint32_t now);
+    void play (uint32_t now, uint16_t msgLen, const uint32_t * msg);
 
   private:
-    uint32_t mNextWrite, mTick, mVal;
+    uint32_t mNextWrite, mTick, mVal, mWriteVal;
     uint16_t mPin;
 };
 
