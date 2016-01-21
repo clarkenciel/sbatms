@@ -7,33 +7,33 @@
  * Author: Danny Clarke
  */
 
-#ifndef __BIT_PULSE_H__
-#define __BIT_PULSE_H__
+#pragma once
 
 #include "math.h"
+#include <stdint.h>
 
 // MAIN DATA STRUCT
 struct BitPulse {
-  double next_write;
-  double duration;
-  double end_time;
+  uint32_t next_write;
+  uint32_t end_time;
+  uint32_t duration;
 
-  int pin;
-  unsigned long wave_state;
+  uint16_t pin;
+  uint32_t wave_state;
 };
 
 // FORWARD DECS
-void setupBitPulse(struct BitPulse* sp, int pin,
-                 double start_time, double dur, double freq);
-void playBitPulse (struct BitPulse* sp);
-void rescheduleBitPulse (struct BitPulse* sp, double dur);
-void muteBitPulse (struct BitPulse* sp);
-void setBitPulseDur (struct BitPulse* sp, double dur);
+void setupBitPulse(struct BitPulse * sp, int pin,
+                 uint32_t start_time, double dur, uint32_t freq);
+void playBitPulse (struct BitPulse * sp);
+void rescheduleBitPulse (struct BitPulse * sp, double dur);
+void muteBitPulse (struct BitPulse * sp);
+void setBitPulseDur (struct BitPulse * sp, double dur);
 
 // DEFINITIONS
 void
-setupBitPulse(struct BitPulse* sp, int pin,
-                 double start_time, double dur)
+setupBitPulse(struct BitPulse * sp, uint16_t pin,
+                 uint32_t start_time, uint32_t dur)
 {
   sp->next_write  = start_time * SECOND;
   sp->duration    = dur * SECOND;
@@ -45,17 +45,14 @@ setupBitPulse(struct BitPulse* sp, int pin,
 
 // Assemble "words" into a sentence
 void 
-playBitPulse (struct BitPulse* sp)
+playBitPulse (struct BitPulse * sp, uint32_t now)
 {
-  double now = micros();
-  double out;
+  uint32_t out;
 
   if (now >= sp->next_write) {
     sp->wave_state++;
-    // out = ((sin(sp->wave_state >> 1) + cos(sp->wave_state >> 2)) 
-    //     + (sp->wave_state >> (sp->wave_state | 100))) * 10;
-    out = sp->wave_state*5 & (sp->wave_state>>7) | sp->wave_state*3 &
-          (sp->wave_state*4 >> 10);
+    out = ((sin(sp->wave_state >> 1) + cos(sp->wave_state >> 2)) 
+        + (sp->wave_state >> (sp->wave_state | 1))) * 5;
     analogWrite(sp->pin, out); 
     sp->next_write = now + SAMPLE;
   }
@@ -64,9 +61,8 @@ playBitPulse (struct BitPulse* sp)
 // Reschedule a square pulse DUR time in the future
 //
 void
-rescheduleBitPulse (struct BitPulse* sp, double dur)
+rescheduleBitPulse (struct BitPulse * sp, uint32_t now, uint32_t dur)
 {
-  double now = micros();
   if (now >= sp->end_time) {
     muteBitPulse(sp);
     sp->next_write  = (dur * SECOND) + now;
@@ -77,7 +73,7 @@ rescheduleBitPulse (struct BitPulse* sp, double dur)
 // mute a square pulse
 //
 void
-muteBitPulse (struct BitPulse* sp)
+muteBitPulse (struct BitPulse * sp)
 {
   digitalWrite(sp->pin, LOW);
 }
@@ -85,9 +81,7 @@ muteBitPulse (struct BitPulse* sp)
 // Set the duration, in seconds, of a square pulse
 //
 void
-setBitPulseDur (struct BitPulse* sp, double dur)
+setBitPulseDur (struct BitPulse * sp, double dur)
 {
   sp->duration = dur * SECOND;
 }
-
-#endif
