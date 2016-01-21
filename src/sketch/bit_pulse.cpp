@@ -18,12 +18,13 @@ BitPulse::BitPulse (uint16_t pin, uint16_t mLen, const uint32_t * msg)
 void
 BitPulse::play (uint32_t now)
 {
+  uint32_t x,y;
   if (now >= mNextWrite)
   {
-    mVal = mTick * ((mTick>>mWords[0]|mTick>>mWords[1])&2047&mTick>>mWords[2]);
-    analogWrite(mPin, mVal);
+    mVal = ((x=mTick>>mWords[0]) | (y=mTick>>mWords[1])) ^ ((x^mWords[2]) | (y^mWords[3]));
+    analogWrite(mPin, (mTick * mVal));
     mNextWrite = now + SAMPLE;
-    mTick+=mWords[3];
+    mTick+=mWords[4];
   }
 }
 

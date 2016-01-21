@@ -1,7 +1,6 @@
 #include "bit_pulse.h"
 #include "reader.h"
 #include "sender.h"
-#include <TimerOne.h>
 
 /*------------- AUDIO ------------- */
 // TODO: Investigate different ways of generating form:
@@ -17,7 +16,7 @@
 #define msgLen 5
 
 const uint32_t leader[leaderLen] = { 1, 2, 1 };
-const uint32_t msg[msgLen] = { 2, 3, 3, 2, 2 };
+uint32_t msg[msgLen];// = { 2, 3, 3, 2, 2 };
 
 // reading buffers
 enum buf_state_t {
@@ -63,16 +62,23 @@ setup()
   pinMode(3, OUTPUT);
   pinMode(2, INPUT);
   pinMode(A0, OUTPUT);
-  
-  //Timer1.initialize(1);
-  //Timer1.attachInterrupt(playPulse);
+
+  // set up internal message
+  Serial.print("Message: ");
+  for (uint16_t i = 0; i < msgLen; i++)
+  {
+    msg[i] = random(2, 10);
+    Serial.print(msg[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
 }
 
 void 
 loop()
 {
   now = micros();
-  cli();
+  //cli();
 
   // PLAY AUDIO
   pulse.play(now);
@@ -97,8 +103,8 @@ loop()
             
             if (bufEquals(leaderLen, lBuf, leaderLen, leader))
             {
-              //Serial.print("LEADER: ");
-              //printBuf(leaderLen, lBuf);
+              Serial.print("LEADER: ");
+              printBuf(leaderLen, lBuf);
               bState = MESSAGE;
             }
             clearBuf(leaderLen, lBuf);
@@ -111,15 +117,15 @@ loop()
           {
             bState = LEADER;
             bufWritePtr = 0;
-            //Serial.print("MESSAGE: ");
-            //printBuf(msgLen, mBuf);
+            Serial.print("MESSAGE: ");
+            printBuf(msgLen, mBuf);
             clearBuf(msgLen, mBuf);
           }
           break;
       }
     }
   }
-  sei();
+  //sei();
 }
 
 // the following is here until I scope it to a class/struct
