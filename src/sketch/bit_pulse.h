@@ -14,13 +14,16 @@
 class BitPulse
 {
   public:
-    BitPulse (uint16_t pin);
+    BitPulse (uint16_t pin, uint16_t numWords, const uint32_t * words);
     ~BitPulse () {};
 
-    void play (uint32_t now, uint16_t msgLen, const uint32_t * msg);
+    void play (uint32_t now);
+    void play2 ();
 
   private:
     uint32_t mNextWrite, mTick, mVal, mWriteVal;
-    uint16_t mPin;
+    uint16_t mPin, mNumWords;
+    const uint32_t * mWords;
 };
+
 

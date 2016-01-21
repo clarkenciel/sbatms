@@ -1,6 +1,7 @@
 #include "bit_pulse.h"
 #include "reader.h"
 #include "sender.h"
+#include <TimerOne.h>
 
 /*------------- AUDIO ------------- */
 // TODO: Investigate different ways of generating form:
@@ -8,7 +9,6 @@
 //        - Patterns of updating the wave state
 //        - Convert sample rate into enum for easier switching
 
-BitPulse pulse = BitPulse(A0);
 
 /* ------------- MESSAGES------------- */
 // message outputs
@@ -43,8 +43,15 @@ uint32_t msgDelta = 1000;
 
 Reader readOne = Reader(2, msgDelta, xDelta);
 Sender sendOne = Sender(msgDelta, leaderLen, leader, msgLen, msg);
+BitPulse pulse = BitPulse(A0, msgLen, msg);
 
 // ------------------ PROGRAM ----------------------------
+void
+playPulse ()
+{
+  pulse.play2();
+}
+
 void 
 setup()
 {
@@ -56,16 +63,19 @@ setup()
   pinMode(3, OUTPUT);
   pinMode(2, INPUT);
   pinMode(A0, OUTPUT);
+  
+  //Timer1.initialize(1);
+  //Timer1.attachInterrupt(playPulse);
 }
 
 void 
 loop()
 {
-  cli();
   now = micros();
+  cli();
 
   // PLAY AUDIO
-  pulse.play(now, msgLen, mBuf);
+  pulse.play(now);
   //pulse.play(now, leaderLen, lBuf);
 
   // MESSAGE HANDLING
