@@ -52,8 +52,10 @@ playBitPulse (struct BitPulse* sp)
 
   if (now >= sp->next_write) {
     sp->wave_state++;
-    out = ((sin(sp->wave_state >> 1) + cos(sp->wave_state >> 2)) 
-        + (sp->wave_state >> (sp->wave_state | 100))) * 10;
+    // out = ((sin(sp->wave_state >> 1) + cos(sp->wave_state >> 2)) 
+    //     + (sp->wave_state >> (sp->wave_state | 100))) * 10;
+    out = sp->wave_state*5 & (sp->wave_state>>7) | sp->wave_state*3 &
+          (sp->wave_state*4 >> 10);
     analogWrite(sp->pin, out); 
     sp->next_write = now + SAMPLE;
   }

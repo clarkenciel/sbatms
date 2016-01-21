@@ -1,4 +1,4 @@
-#include "../lib/pulse.h"
+#include "pulse.h"
 
 // TODO: Investigate different ways of generating form:
 //        - Patterns of logic application
