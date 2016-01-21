@@ -1,12 +1,14 @@
-#ifndef __PULSE_H__
-#define __PULSE_H__
+/* 
+ * square_pulse.h
+ * Asynchronous square pulse generator for Arduino
+ * Author:Danny Clarke
+ */
 
-#include "Arduino.h"
+#ifndef __SQUARE_PULSE_H__
+#define __SQUARE_PULSE_H__
 
-#define DUR_SCALE 1000.0 * 1000.0
-
+// MAIN DATA STRUCTURE
 struct SquarePulse {
-  double attack_time;
   double duration;
   double end_time;
   double next_write;
@@ -15,14 +17,23 @@ struct SquarePulse {
   int wave_state;
 };
 
+// FORWARD DECS
+void setupSquarePulse(struct SquarePulse* sp, int pin,
+                      double start_time, double dur, double freq);
+void playSquarePulse (struct SquarePulse* sp);
+void rescheduleSquarePulse (struct SquarePulse* sp, double dur);
+void muteSquarePulse (struct SquarePulse* sp);
+void setSquarePulseDur (struct SquarePulse* sp, double dur);
+void setSquarePulseFreq (struct SquarePulse* sp, double freq);
+
+// DEFINITIONS
 void
 setupSquarePulse(struct SquarePulse* sp, int pin,
                  double start_time, double dur, double freq)
 {
-  sp->attack_time = start_time * DUR_SCALE;
-  sp->duration    = dur * DUR_SCALE;
-  sp->end_time    = sp->duration + sp->attack_time;
-  sp->next_write  = sp->attack_time;
+  sp->next_write  = start_time * SECOND;
+  sp->duration    = dur * SECOND;
+  sp->end_time    = sp->duration + sp->next_write;
   sp->freq        = freq;
   sp->wave_state  = 0;
   sp->pin         = pin;
@@ -60,32 +71,41 @@ playSquarePulse (struct SquarePulse* sp)
   }
 }
 
-// Reschedule a square pulse
+// Reschedule a square pulse DUR time in the future
+//
 void
 rescheduleSquarePulse (struct SquarePulse* sp, double dur)
 {
   double now = micros();
-  sp->attack_time = (dur * DUR_SCALE) + now;
-  sp->end_time    = sp->attack_time + sp->duration;
-  sp->next_write  = sp->attack_time;
+  if (now >= sp->end_time) {
+    muteSquarePulse(sp);
+    sp->next_write  = (dur * SECOND) + now;
+    sp->end_time    = sp->next_write + sp->duration;
+  }
 }
 
 // mute a square pulse
+//
 void
 muteSquarePulse (struct SquarePulse* sp)
 {
   digitalWrite(sp->pin, LOW);
 }
 
+// Set the duration, in seconds, of a square pulse
+//
 void
 setSquarePulseDur (struct SquarePulse* sp, double dur)
 {
-  sp->duration = dur * DUR_SCALE;
+  sp->duration = dur * SECOND;
 }
 
-void setSquarePulseFreq (struct SquarePulse* sp, double freq)
+// Set the frequency of a square pulse
+//
+void 
+setSquarePulseFreq (struct SquarePulse* sp, double freq)
 {
   sp->freq = freq;
 }
-#endif
 
+#endif
