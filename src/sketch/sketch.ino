@@ -1,4 +1,4 @@
-#include "pulse.h"
+#include "bit_pulse2.h"
 #include "reader.h"
 #include "sender.h"
 
@@ -8,15 +8,7 @@
 //        - Patterns of updating the wave state
 //        - Convert sample rate into enum for easier switching
 
-// pitch
-double next_freq;
-float freqs[]      = { 0.1, 0.2, 0.3, 0.4 };
-uint16_t n_freqs   = 6;
-uint16_t pitch_idx = 0;
-
-struct SquarePulse sp;
-struct SquarePulse sp2;
-struct BitPulse bp;
+BitPulse pulse = BitPulse(A0);
 
 /* ------------- MESSAGES------------- */
 // message outputs
@@ -60,12 +52,10 @@ setup()
   Serial.begin(9600);
   Serial.println("Startup");
 
-  // set up audio
-  setupBitPulse(&bp, 4, 1.0, 100.0);
-
   // set up IR
   pinMode(3, OUTPUT);
   pinMode(2, INPUT);
+  pinMode(A0, OUTPUT);
 }
 
 void 
@@ -75,8 +65,8 @@ loop()
   now = micros();
 
   // PLAY AUDIO
-  playBitPulse(&bp, now);
-  rescheduleBitPulse(&bp, now, 0.25);
+  pulse.play(now);
+  
 
   // MESSAGE HANDLING
   sendOne.send2(now, &PORTD, B00001000); // set pin 3 to on
