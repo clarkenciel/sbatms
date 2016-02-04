@@ -23,7 +23,7 @@ class Reader
     
   private:
     uint16_t mPin;
-    uint32_t mStart, mEnd, mWord, mMsgDelta;
+    uint32_t mStart, mEnd, mWord, mMsgDelta, mTimeOut;
     int32_t mThreshold, mLastVal, mCurrentVal;
     reader_state_t mState;
 

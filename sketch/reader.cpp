@@ -5,8 +5,8 @@ Reader::Reader (uint16_t p, uint32_t md, int32_t cd)
   : mPin(p)
   , mMsgDelta(md)
   , mThreshold(cd)
-  , mCurrentVal(cd)
-  , mLastVal(cd)
+  , mCurrentVal(0)
+  , mLastVal(0)
 {
   mState = UP_LISTENING;  
 }
@@ -27,8 +27,10 @@ Reader::read (uint32_t now)
       {
         mStart = now;
         mState = DOWN_LISTENING;
+        mTimeOut = now + mMsgDelta;
       }
       break;
+
     case DOWN_LISTENING:
       if (shift)
       {
@@ -37,9 +39,16 @@ Reader::read (uint32_t now)
         mState = WORD_READ;
       }
       break;
+
     default:
       mState = UP_LISTENING;
       break;
+  }
+  if (now >= mTimeOut) 
+  {
+    mState = UP_LISTENING;
+    mStart = 0;
+    mEnd = 0;
   }
 }
 
@@ -47,6 +56,15 @@ void
 Reader::read2 (uint32_t now, const uint8_t pinRegister, const uint8_t pins)
 {
   bool shift = detectShift2(pinRegister, pins);
+  //Serial.print(now);
+  //Serial.print(", ");
+  //Serial.println(mState);
+  //Serial.print(", ");
+  //Serial.print(mStart);
+  //Serial.print(", ");
+  //Serial.print(mEnd);
+  //Serial.print(", ");
+  //Serial.println(mWord);
   switch (mState)
   {
     case UP_LISTENING:

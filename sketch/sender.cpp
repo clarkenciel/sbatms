@@ -14,7 +14,9 @@ Sender::Sender (uint32_t delta
   , mNextWriteTime(0)
   , mMsgState(DOWN)
   , mSndState(LEADER)
-{}
+  , mWritePointer(0)
+{
+}
 
 void
 Sender::send (uint32_t now, uint16_t numPins, const uint16_t * pins)
@@ -63,7 +65,7 @@ Sender::sendOut (uint16_t pin)
 void
 Sender::sendOut2 (volatile uint8_t * pinRegister, uint8_t pinTargets)
 {
-//  Serial.print(PORTD, BIN); Serial.print(", ");
+  //Serial.print(PORTD, BIN); Serial.print(", ");
   switch (mMsgState)
   {
     case DOWN:
@@ -73,13 +75,13 @@ Sender::sendOut2 (volatile uint8_t * pinRegister, uint8_t pinTargets)
       *pinRegister |= pinTargets;
       break;
   }
-//  Serial.println(PORTD, BIN);
+  //Serial.println(PORTD, BIN);
 }
 
 void
 Sender::scheduleNextWrite(uint32_t now)
 {
-  uint32_t interval;
+  uint32_t interval = 0;
 
   if (mMsgState == DOWN)
     mNextWriteTime = now + mMsgDelta;
@@ -95,6 +97,7 @@ Sender::scheduleNextWrite(uint32_t now)
         break;
     }
   
+    //Serial.println(interval);
     mNextWriteTime = now + interval*mMsgDelta;
   }
 }
