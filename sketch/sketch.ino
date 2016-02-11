@@ -3,13 +3,6 @@
 #include "sender.h"
 #include "parser.h"
 
-/*------------- AUDIO ------------- */
-// TODO: Investigate different ways of generating form:
-//        - Patterns of logic application
-//        - Patterns of updating the wave state
-//        - Convert sample rate into enum for easier switching
-
-
 /* ------------- MESSAGES------------- */
 // message outputs
 #define leaderLen 3
@@ -17,10 +10,6 @@
 
 const uint32_t leader[leaderLen] = { 1, 2, 1 };
 uint32_t coreMsg[msgLen];
-
-// reading buffers
-void printBuf (uint16_t bufLen, const uint32_t * buf);
-void mutateCore (const uint32_t * message);
 
 // reader and sender config
 uint32_t now = 0;
@@ -40,6 +29,12 @@ Parser parseFour = Parser(leader, leaderLen, msgLen);
 
 Sender sendOne = Sender(msgDelta, leaderLen, leader, msgLen, coreMsg);
 BitPulse pulse = BitPulse(A0, msgLen, coreMsg);
+
+// reading buffers and core message handling
+void printBuf (uint16_t bufLen, const uint32_t * buf);
+void mutateCore (const uint32_t * message);
+bool coreFlatlined ();
+void randomizeCore ();
 
 // ------------------ PROGRAM ----------------------------
 void setup () {
@@ -120,10 +115,14 @@ void loop() {
     printBuf(msgLen, coreMsg);
     parseFour.listen();
   }
+  if (coreFlatlined())
+    randomizeCore();
   
   sei();
 }
 
+// mutate the values in the core message so that they
+// converge on another message
 void mutateCore (const uint32_t * message) {
   int32_t dif;
   int32_t cW, iW;
@@ -133,12 +132,13 @@ void mutateCore (const uint32_t * message) {
     dif = cW - iW;
 
     if (dif > 0)
-      coreMsg[i] = constrain(cW - 1, 2, 10);
+      coreMsg[i] = constrain(cW - 1, 1, 10);
     else if (dif < 0)
-      coreMsg[i] = constrain(cW + 1, 2, 10);
+      coreMsg[i] = constrain(cW + 1, 1, 10);
   }
 }
 
+// print out a buffer of 32-bit unsigned int values
 void printBuf (uint16_t bufLen, const uint32_t * buf) {
   Serial.print("[");
   for (uint16_t i = 0; i < bufLen; i++) {
@@ -148,3 +148,23 @@ void printBuf (uint16_t bufLen, const uint32_t * buf) {
   Serial.println("]");
 }
 
+// randomize the values in the core message
+void randomizeCore () {
+  for (uint16_t i = 0; i < msgLen; i++)
+    coreMsg[i] = random(1,10);
+}
+
+// check whether the core message has become
+// exclusively one value
+bool coreFlatlined () {
+  uint16_t i = 0;
+  uint32_t lastVal = coreMsg[0];
+  bool flat = true;
+
+  while (i < msgLen && flat) {
+    flat = flat && (lastVal == coreMsg[i]);
+    lastVal = coreMsg[i++];
+  }
+
+  return flat;
+}

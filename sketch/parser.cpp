@@ -75,3 +75,4 @@ void Parser::clearLeader () {
   for (uint16_t i = 0; i < mLeaderSize; i++)
     mLeader[i] = 0;
 }
+
