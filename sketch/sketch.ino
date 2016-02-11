@@ -1,6 +1,7 @@
 #include "bit_pulse.h"
 #include "reader.h"
 #include "sender.h"
+#include "parser.h"
 
 /*------------- AUDIO ------------- */
 // TODO: Investigate different ways of generating form:
@@ -18,22 +19,8 @@ const uint32_t leader[leaderLen] = { 1, 2, 1 };
 uint32_t coreMsg[msgLen];
 
 // reading buffers
-enum buf_state_t {
-  LEADER_LISTEN = 0,
-  MESSAGE_LISTEN,
-  MESSAGE_READ,
-  NUM_STATES
-};
-
-buf_state_t bState = LEADER_LISTEN;
-uint16_t bufWritePtr = 0;
-uint32_t inLdr[leaderLen];
-uint32_t inMsg[msgLen];
 void printBuf (uint16_t bufLen, const uint32_t * buf);
-void clearBuf (uint16_t bufLen, uint32_t * buf);
-bool bufEquals (uint16_t bOneLen, const uint32_t * bufOne, uint16_t bTwoLen, const uint32_t * bufTwo);
-void parseMessage (Reader & reader);
-void mutateCore ();
+void mutateCore (const uint32_t * message);
 
 // reader and sender config
 uint32_t now = 0;
@@ -41,88 +28,108 @@ uint32_t now = 0;
 int32_t xDelta = 2;
 uint32_t msgDelta = 10000;
 
-//Reader * readOne;
-//Sender * sendOne;
-//BitPulse * pulse;
+Reader readOne = Reader(3, msgDelta, xDelta);
+Reader readTwo = Reader(4, msgDelta, xDelta);
+Reader readThree = Reader(5, msgDelta, xDelta);
+Reader readFour = Reader(6, msgDelta, xDelta);
 
-Reader readOne = Reader(2, msgDelta, xDelta);
+Parser parseOne = Parser(leader, leaderLen, msgLen);
+Parser parseTwo = Parser(leader, leaderLen, msgLen);
+Parser parseThree = Parser(leader, leaderLen, msgLen);
+Parser parseFour = Parser(leader, leaderLen, msgLen);
+
 Sender sendOne = Sender(msgDelta, leaderLen, leader, msgLen, coreMsg);
 BitPulse pulse = BitPulse(A0, msgLen, coreMsg);
 
 // ------------------ PROGRAM ----------------------------
-void 
-setup()
-{
+void setup () {
   // start debug output
   Serial.begin(9600);
   Serial.println("Startup");
 
   // set up IR
-  pinMode(3, OUTPUT);
-  pinMode(2, INPUT);
-  pinMode(A0, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, INPUT);
+  pinMode(4, INPUT);
+  pinMode(5, INPUT);
+  pinMode(6, INPUT);
 
+  // set up audio
+  pinMode(A0, OUTPUT);
+  
   // set up internal message
   Serial.print("Message: ");
-  for (uint16_t i = 0; i < msgLen; i++)
-  {
+  for (uint16_t i = 0; i < msgLen; i++) {
     coreMsg[i] = random(2, 10);
     Serial.print(coreMsg[i]);
     Serial.print(" ");
   }
   Serial.println();
-  
-  // set up reader, sender, and player
-  //readOne = new Reader(2, msgDelta, xDelta);
-  //sendOne = new Sender(msgDelta, leaderLen, leader, msgLen, coreMsg);
-  //pulse   = new BitPulse(A0, msgLen, coreMsg);
 }
 
-void 
-loop()
-{
+void loop() {
   now = micros();
   cli();
 
   // PLAY AUDIO
-  //pulse->play(now);
   pulse.play(now);
 
   // MESSAGE HANDLING
-  //sendOne->send2(now, &PORTD, B00001000); // set pin 3 to on
-  //readOne->read2(now,  PIND,  B00000100); // read pin 2
-  sendOne.send2(now, &PORTD, B00001000); // set pin 3 to on
-  readOne.read2(now,  PIND,  B00000100); // read pin 2
+  sendOne.send2(now,  &PORTD, B00000100); // set pin 2 to on
+  readOne.read2(now,   PIND,  B00001000); // read pin 3
+  readTwo.read2(now,   PIND,  B00010000); // read pin 4
+  readThree.read2(now, PIND,  B00100000); // read pin 5
+  readFour.read2(now,  PIND,  B01000000); // read pin 6
 
   // store a leader or buffer
-  parseMessage(readOne);
-
-  // print message info
-  if (bState == MESSAGE_READ)
-  {
-    mutateCore();
-
-    Serial.print("INCOMING MESSAGE: ");
-    printBuf(msgLen, inMsg);
-
-    Serial.print("CORE MESSAGE: ");
-    printBuf(msgLen, coreMsg);
-
-    bState = LEADER_LISTEN;
-    clearBuf(msgLen, inMsg);
+  if (readOne.hasWord()) {
+    parseOne.parseMessage(readOne.getWord());
   }
+  if (readTwo.hasWord()) {
+    parseOne.parseMessage(readTwo.getWord());
+  }
+  if (readThree.hasWord()) {
+    parseOne.parseMessage(readThree.getWord());
+  }
+  if (readFour.hasWord()) {
+    parseOne.parseMessage(readFour.getWord());
+  }
+
+  // mutate core, maybe
+  if (parseOne.hasMessage()) {
+    mutateCore(parseOne.getMessage());
+    Serial.println("message one!");
+    printBuf(msgLen, coreMsg);
+    parseOne.listen();
+  }
+  if (parseTwo.hasMessage()) {
+    mutateCore(parseTwo.getMessage());
+    Serial.println("message two!");
+    printBuf(msgLen, coreMsg);
+    parseTwo.listen();
+  }
+  if (parseThree.hasMessage()) {
+    mutateCore(parseThree.getMessage());
+    Serial.println("message three!");
+    printBuf(msgLen, coreMsg);
+    parseThree.listen();
+  }
+  if (parseFour.hasMessage()) {
+    mutateCore(parseFour.getMessage());
+    Serial.println("message four!");
+    printBuf(msgLen, coreMsg);
+    parseFour.listen();
+  }
+  
   sei();
 }
 
-void
-mutateCore ()
-{
+void mutateCore (const uint32_t * message) {
   int32_t dif;
   int32_t cW, iW;
-  for (uint16_t i = 0; i < msgLen; i++)
-  {
+  for (uint16_t i = 0; i < msgLen; i++) {
     cW = coreMsg[i];
-    iW = inMsg[i];
+    iW = message[i];
     dif = cW - iW;
 
     if (dif > 0)
@@ -132,84 +139,12 @@ mutateCore ()
   }
 }
 
-// the following is here until I scope it to a class/struct
-/* ------------- BUFFER HANDLING ------------- */
-void
-parseMessage (Reader & reader)
-{
-  if (reader.hasWord())
-  {
-    uint32_t w = reader.getWord();
-    if (w <= 10)
-    {
-      switch (bState)
-      {
-        case LEADER_LISTEN:
-          inLdr[bufWritePtr++] = w;
-          if (bufWritePtr == leaderLen)
-          {
-            if (bufEquals(leaderLen, inLdr, leaderLen, leader))
-            {
-              bState = MESSAGE_LISTEN;
-
-              Serial.print("LEADER: ");
-              printBuf(leaderLen, inLdr);
-            }
-            clearBuf(leaderLen, inLdr);
-            bufWritePtr = 0;
-          }
-          break;
-
-        case MESSAGE_LISTEN:
-          inMsg[bufWritePtr++] = w;
-          if (bufWritePtr == msgLen)
-          {
-            bState = MESSAGE_READ;
-            bufWritePtr = 0;
-
-            Serial.print("INCOMING MESSAGE: ");
-            printBuf(msgLen, inMsg);
-          }
-          break;
-
-        default:
-          break;
-      }
-    }
-  }
-}
-
-void
-printBuf (uint16_t bufLen, const uint32_t * buf)
-{
+void printBuf (uint16_t bufLen, const uint32_t * buf) {
   Serial.print("[");
-  for (uint16_t i = 0; i < bufLen; i++)
-  {
+  for (uint16_t i = 0; i < bufLen; i++) {
     Serial.print(buf[i]);
     Serial.print(" ");
   }
   Serial.println("]");
 }
 
-void
-clearBuf (uint16_t bufLen, uint32_t * buf)
-{
-  for (uint16_t i = 0; i < bufLen; i++)
-    buf[i] = 0;
-}
-
-bool
-bufEquals (uint16_t bOneLen, const uint32_t * bufOne, uint16_t bTwoLen, const uint32_t * bufTwo)
-{
-  if (bOneLen != bTwoLen)
-    return false;
-  else
-  {
-    for (uint16_t i; i < bOneLen; i++)
-    {
-      if (bufOne[i] != bufTwo[i])
-        return false;
-    }
-    return true;
-  }
-}
