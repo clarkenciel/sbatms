@@ -14,18 +14,20 @@ uint32_t coreMsg[msgLen];
 // reader and sender config
 uint32_t now = 0;
 
-int32_t xDelta = 2;
+//int32_t xDelta = 2;
+uint32_t msgTimeoutDelta = 11;
 uint32_t msgDelta = 10000;
+uint32_t timeout = msgTimeoutDelta * msgDelta;
 
-Reader readOne = Reader(3, msgDelta, xDelta);
-Reader readTwo = Reader(4, msgDelta, xDelta);
-Reader readThree = Reader(5, msgDelta, xDelta);
-Reader readFour = Reader(6, msgDelta, xDelta);
+Reader readOne = Reader(3, msgDelta, timeout);
+Reader readTwo = Reader(4, msgDelta, timeout);
+Reader readThree = Reader(5, msgDelta, timeout);
+Reader readFour = Reader(6, msgDelta, timeout);
 
-Parser parseOne = Parser(leader, leaderLen, msgLen);
-Parser parseTwo = Parser(leader, leaderLen, msgLen);
-Parser parseThree = Parser(leader, leaderLen, msgLen);
-Parser parseFour = Parser(leader, leaderLen, msgLen);
+Parser parseOne = Parser(leader, leaderLen, msgLen, timeout);
+Parser parseTwo = Parser(leader, leaderLen, msgLen, timeout);
+Parser parseThree = Parser(leader, leaderLen, msgLen, timeout);
+Parser parseFour = Parser(leader, leaderLen, msgLen, timeout);
 
 Sender sendOne = Sender(msgDelta, leaderLen, leader, msgLen, coreMsg);
 BitPulse pulse = BitPulse(A0, msgLen, coreMsg);
@@ -43,15 +45,17 @@ void setup () {
   Serial.println("Startup");
 
   // set up IR
-  pinMode(2, OUTPUT);
-  pinMode(3, INPUT);
-  pinMode(4, INPUT);
-  pinMode(5, INPUT);
-  pinMode(6, INPUT);
+  // 2 - 6 are outputs (this is for variation in my perf-board circuits)
+  for (int i = 2; i < 7; i++)
+      pinMode(i, OUTPUT);
+
+  // 8 - 11 are inputs
+  for (int i = 8; i < 12; i++)
+      pinMode(i, INPUT);
 
   // set up audio
   pinMode(A0, OUTPUT);
-  
+
   // set up internal message
   Serial.print("Message: ");
   for (uint16_t i = 0; i < msgLen; i++) {
@@ -68,13 +72,13 @@ void loop() {
 
   // PLAY AUDIO
   pulse.play(now);
-
+ 
   // MESSAGE HANDLING
-  sendOne.send2(now,  &PORTD, B00000100); // set pin 2 to on
-  readOne.read2(now,   PIND,  B00001000); // read pin 3
-  readTwo.read2(now,   PIND,  B00010000); // read pin 4
-  readThree.read2(now, PIND,  B00100000); // read pin 5
-  readFour.read2(now,  PIND,  B01000000); // read pin 6
+  sendOne.send2(now,  &PORTD, B11111100); // set pin 2 to on
+  readOne.read2(now,   PINB,  B00000100); // read pin 3
+  readTwo.read2(now,   PINB,  B00001000); // read pin 4
+  readThree.read2(now, PINB,  B00010000); // read pin 5
+  readFour.read2(now,  PINB,  B00100000); // read pin 6
 
   // store a leader or buffer
   if (readOne.hasWord()) {
@@ -117,7 +121,7 @@ void loop() {
   }
   if (coreFlatlined())
     randomizeCore();
-  
+
   sei();
 }
 
@@ -151,7 +155,7 @@ void printBuf (uint16_t bufLen, const uint32_t * buf) {
 // randomize the values in the core message
 void randomizeCore () {
   for (uint16_t i = 0; i < msgLen; i++)
-    coreMsg[i] = random(1,10);
+    coreMsg[i] = random(1, 10);
 }
 
 // check whether the core message has become
