@@ -16,7 +16,7 @@ class Reader {
    };
   
   public: 
-   Reader (uint16_t pin, uint32_t msgDelta, uint32_t timeOutInterval);
+   Reader (uint32_t msgDelta, uint32_t timeOutInterval);
    ~Reader () {};
 
    void read2 (uint32_t now, uint8_t pinRegister, uint8_t pins);

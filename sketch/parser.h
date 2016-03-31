@@ -33,7 +33,7 @@ class Parser {
    uint32_t * mLeader;
    const uint32_t * mLeaderTemplate;
    uint32_t * mMessage;
-   const uint16_t mLeaderSize, mMessageSize, mTimeOut;
+   const uint16_t mLeaderSize, mMessageSize, mTimeout;
    uint16_t mLeaderWritePos, mMessageWritePos;
    parser_state_t mState;
 

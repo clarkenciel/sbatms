@@ -45,7 +45,7 @@ bool Parser::hasMessage () {
  */
 void Parser::parseMessage (uint32_t word) {
   // a kind of timeout: words > 10 are invalid
-  if (word <= mTimeOut) { 
+  if (word <= mTimeout) { 
     switch (mState) {
 
       // record in the leader buffer

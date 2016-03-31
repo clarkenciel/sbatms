@@ -1,12 +1,11 @@
 #include "reader.h"  
 #include "Arduino.h"
 
-Reader::Reader (uint16_t pin, uint32_t msgDelta, uint32_t timeOutInterval)
-  : mPin(pin)
-  , mMsgDelta(msgDelta)
-  , mTimeOutInterval(timeOutInterval)
-  , mCurrentVal(0)
-  , mLastVal(0) {
+Reader::Reader (uint32_t msgDelta, uint32_t timeOutInterval)
+   : mMsgDelta(msgDelta)
+   , mTimeOutInterval(timeOutInterval)
+   , mCurrentVal(0)
+   , mLastVal(0) {
    mState = UP_LISTENING;  
 }
 
@@ -19,48 +18,50 @@ Reader::Reader (uint16_t pin, uint32_t msgDelta, uint32_t timeOutInterval)
  * UP period and, if the period was long enough, we change state to WORD_READ
  */
 void Reader::read2 (uint32_t now, const uint8_t pinRegister, const uint8_t pins) {
-  switch (mState) {
+   bool shift = false;
+   
+   switch (mState) {
 
-    // Initial state: watching for a light to turn on.
-  case UP_LISTENING:
-    bool shift = detectShift2(pinRegister, pins);
-    if (shift) {
-      mStart = now;
-      mState = DOWN_LISTENING;
-      mTimeOut = now + mTimeOutInterval;
-    }
-    break;
+      // Initial state: watching for a light to turn on.
+      case UP_LISTENING:
+         shift = detectShift2(pinRegister, pins);
+         if (shift) {
+            mStart = now;
+            mState = DOWN_LISTENING;
+            mTimeOut = now + mTimeOutInterval;
+         }
+         break;
 
-    // Saw a light turn on, waiting for it to turn off.
-  case DOWN_LISTENING:
-    bool shift = detectShift2(pinRegister, pins);
+         // Saw a light turn on, waiting for it to turn off.
+      case DOWN_LISTENING:
+         shift = detectShift2(pinRegister, pins);
 
-    // record duration between light turning on and turning off
-    // as a word.
-    // TODO: How to handle similar behavior if the light is
-    //       simply moved? Perhaps invert this machine to
-    //       record period with no light?
-    if (shift) {
-      mEnd = now;
-      mWord = (mEnd - mStart) / mMsgDelta;      
-      if (mWord > 0)
-        mState = WORD_READ;
-    }
+         // record duration between light turning on and turning off
+         // as a word.
+         // TODO: How to handle similar behavior if the light is
+         //       simply moved? Perhaps invert this machine to
+         //       record period with no light?
+         if (shift) {
+            mEnd = now;
+            mWord = (mEnd - mStart) / mMsgDelta;      
+            if (mWord > 0)
+               mState = WORD_READ;
+         }
     
-    // shift back to UP_LISTENING on timeout
-    else if (now > mTimeOut)
-      mState = UP_LISTENING;
-    break;
+         // shift back to UP_LISTENING on timeout
+         else if (now > mTimeOut)
+            mState = UP_LISTENING;
+         break;
 
-    // only move back to UP_LISTENING when the word is taken
-  case WORD_TAKEN:
-    mState = UP_LISTENING;
-    break;
+         // only move back to UP_LISTENING when the word is taken
+      case WORD_TAKEN:
+         mState = UP_LISTENING;
+         break;
     
-    // only other state is WORD_READ, do nothing in that state
-  default:
-    break;
-  }
+         // only other state is WORD_READ, do nothing in that state
+      default:
+         break;
+   }
 }
 
 /*
@@ -68,20 +69,20 @@ void Reader::read2 (uint32_t now, const uint8_t pinRegister, const uint8_t pins)
  * that has not been taken already
  */
 bool Reader::hasWord () {
-  switch(mState) {
-  case WORD_READ:
-    return true;
-  default:
-    return false;
-  }
+   switch(mState) {
+      case WORD_READ:
+         return true;
+      default:
+         return false;
+   }
 }
 
 /*
  * Return the word and mark the reader as read
  */
 uint32_t Reader::getWord () {
-  mState = WORD_TAKEN;
-  return mWord;
+   mState = WORD_TAKEN;
+   return mWord;
 }
 
 /*
@@ -92,20 +93,20 @@ uint32_t Reader::getWord () {
  * to be checking.
  */
 bool Reader::detectShift2 (const uint8_t pinRegister, const uint8_t pins) { 
-  // if the pins we care about are off,
-  // then mCurrentVal will be 0
-  // Otherwise mCurrentVal will be some number.
-  mCurrentVal = pinRegister & pins;  
+   // if the pins we care about are off,
+   // then mCurrentVal will be 0
+   // Otherwise mCurrentVal will be some number.
+   mCurrentVal = pinRegister & pins;  
   
-  //   lo -> hi                  ||  hi -> lo
-  if ((mCurrentVal && !mLastVal) || (!mCurrentVal && mLastVal)) {
-    mLastVal = mCurrentVal;
-    return true;
-  }
-  else {
-    mLastVal = mCurrentVal;
-    return false;
-  }
+   //   lo -> hi                  ||  hi -> lo
+   if ((mCurrentVal && !mLastVal) || (!mCurrentVal && mLastVal)) {
+      mLastVal = mCurrentVal;
+      return true;
+   }
+   else {
+      mLastVal = mCurrentVal;
+      return false;
+   }
 }
 
 /* ------------- DEPRECATED METHODS ------------- */
