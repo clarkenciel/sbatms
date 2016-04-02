@@ -5,8 +5,8 @@
 
 /* ------------- MESSAGES------------- */
 // message outputs
-#define leaderLen 3
-#define msgLen 5
+const uint16_t leaderLen = 3;
+const uint16_t msgLen = 5;
 
 const uint32_t leader[leaderLen] = { 1, 2, 1 };
 uint32_t coreMsg[msgLen];
@@ -14,15 +14,14 @@ uint32_t coreMsg[msgLen];
 // reader and sender config
 uint32_t now = 0;
 
-//int32_t xDelta = 2;
 uint32_t msgTimeoutDelta = 11;
 uint32_t msgDelta = 10000;
 uint32_t timeout = msgTimeoutDelta * msgDelta;
 
-Reader readOne = Reader(3, msgDelta, timeout);
-Reader readTwo = Reader(4, msgDelta, timeout);
-Reader readThree = Reader(5, msgDelta, timeout);
-Reader readFour = Reader(6, msgDelta, timeout);
+Reader readOne = Reader(msgDelta, timeout);
+Reader readTwo = Reader(msgDelta, timeout);
+Reader readThree = Reader(msgDelta, timeout);
+Reader readFour = Reader(msgDelta, timeout);
 
 Parser parseOne = Parser(leader, leaderLen, msgLen, timeout);
 Parser parseTwo = Parser(leader, leaderLen, msgLen, timeout);
@@ -153,6 +152,7 @@ void printBuf (uint16_t bufLen, const uint32_t * buf) {
 }
 
 // randomize the values in the core message
+// IDEA: change "personality" - likelihood of change
 void randomizeCore () {
   for (uint16_t i = 0; i < msgLen; i++)
     coreMsg[i] = random(1, 10);
