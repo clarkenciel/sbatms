@@ -74,10 +74,10 @@ void loop() {
  
   // MESSAGE HANDLING
   sendOne.send2(now,  &PORTD, B11111100); // set pin 2 to on
-  readOne.read2(now,   PINB,  B00000100); // read pin 3
-  readTwo.read2(now,   PINB,  B00001000); // read pin 4
-  readThree.read2(now, PINB,  B00010000); // read pin 5
-  readFour.read2(now,  PINB,  B00100000); // read pin 6
+  readOne.read2(now,   PINB,  B00000010); // read pin 9
+  readTwo.read2(now,   PINB,  B00000100); // read pin 10
+  readThree.read2(now, PINB,  B00001000); // read pin 11
+  readFour.read2(now,  PINB,  B00010000); // read pin 12
 
   // store a leader or buffer
   if (readOne.hasWord()) {
@@ -127,18 +127,24 @@ void loop() {
 // mutate the values in the core message so that they
 // converge on another message
 void mutateCore (const uint32_t * message) {
-  int32_t dif;
-  int32_t cW, iW;
-  for (uint16_t i = 0; i < msgLen; i++) {
-    cW = coreMsg[i];
-    iW = message[i];
-    dif = cW - iW;
-
-    if (dif > 0)
-      coreMsg[i] = constrain(cW - 1, 1, 10);
-    else if (dif < 0)
-      coreMsg[i] = constrain(cW + 1, 1, 10);
-  }
+  uint16_t idx = random(0, msgLen);
+  int32_t cW = coreMsg[idx], mW = message[idx];
+  int32_t dif = cW - mW;
+  if (dif > 0) coreMsg[idx] = constrain(cW - 1, 1, 10);
+  else if (dif < 0) coreMsg[idx] = constrain(cW + 1, 1, 10);
+  //coreMsg[idx] = message[idx];
+//  int32_t dif;
+//  int32_t cW, iW;
+//  for (uint16_t i = 0; i < msgLen; i++) {
+//    cW = coreMsg[i];
+//    iW = message[i];
+//    dif = cW - iW;
+//
+//    if (dif > 0)
+//      coreMsg[i] = constrain(cW - 1, 1, 10);
+//    else if (dif < 0)
+//      coreMsg[i] = constrain(cW + 1, 1, 10);
+//  }
 }
 
 // print out a buffer of 32-bit unsigned int values

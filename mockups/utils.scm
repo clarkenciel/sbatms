@@ -39,3 +39,15 @@
 
 (define (safe-length . colls)
   (apply min (map length colls)))
+
+(define (random-subset coll n)
+  (define (sub-iter result source n)
+    (if (or (= 0 n)
+            (null? source))
+        result
+        (let ((idx (random (length source))))
+          (let-values (((head tail) (split-at source idx)))
+            (sub-iter (cons (car tail) result)
+                      (append head (cdr tail))
+                      (- n 1))))))
+  (sub-iter '() coll n))

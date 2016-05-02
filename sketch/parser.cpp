@@ -44,6 +44,7 @@ bool Parser::hasMessage () {
  * the Parser will simply pass through.
  */
 void Parser::parseMessage (uint32_t word) {
+
   // a kind of timeout: words > 10 are invalid
   if (word <= mTimeout) { 
     switch (mState) {
@@ -55,8 +56,9 @@ void Parser::parseMessage (uint32_t word) {
       mLeader[mLeaderWritePos++] = word;
 
       if (mLeaderWritePos == mLeaderSize) {
-        if (leaderMatch())
+        if (leaderMatch()) {
           mState = MESSAGE_LISTEN;
+        }
         
         clearLeader();
         mLeaderWritePos = 0;
@@ -92,7 +94,7 @@ bool Parser::leaderMatch () {
   }
   
   // if score == 0, then we have a match (!0 == true), otherwise false
-  return !mLeaderSize; 
+  return !score;
 }
 
 /*

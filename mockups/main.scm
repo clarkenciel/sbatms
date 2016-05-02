@@ -20,6 +20,12 @@
    (alist-cons
     'pattern (list sbatm-leader pattern) '())))
 
+(define (make-sbatms behavior message-size num)
+  (map (lambda (_)
+         (make-sbatm behavior
+                     (random-pattern message-size 1 10)))
+       (range num 10 1)))
+
 (define (print-sbatm sbatm)
   (let ((message  (get-message sbatm))
         (behavior (get-behavior sbatm)))
@@ -78,22 +84,30 @@
   (map nudge source-pat target-pat))
 
 ;; program
+(define (build-visualizer visualizers)
+  (if (null? visualizers)
+      (lambda (x) x)
+      (lambda (cs)
+        (fold (lambda (f c) (f c)) cs visualizers))))
 
-(define (sbatms-iterate connections n)
-  (define (iterate-iter conns i)
-    (if (= i 0)
-        connections
-        (let ((new-cons (map run-connection conns)))
-          (print "Iteration " (- n i) ":")
-          (pp (car new-cons))
-          (iterate-iter new-cons (- i 1)))))
-  (iterate-iter connections n))
+(define (sbatms-iterate connections n . visualizers)
+  (let ((viz-func (build-visualizer visualizers)))
+    (define (iterate-iter conns i)
+      (if (= i n)
+          connections
+          (let ((new-cons (map run-connection conns)))
+            (viz-func new-cons)
+            (iterate-iter new-cons (+ i 1)))))
+    (iterate-iter connections 0)))
 
-(define (test n)
-  (let* ((sbatms (map (lambda (_)
-                        (make-sbatm single-converge
-                                    (random-pattern 5 1 10)))
-                      (range 0 10 1)))
-         (connection (connect (car sbatms) (cdr sbatms))))
-    (sbatms-iterate (list connection) n)
-    '()))
+(define (print-iteration connections i)
+  (print "Iteration: " i)
+  (pp (car connections)))
+
+(define (run s-num behavior message-size con-num iterations)
+  (let* ((sbatms (make-sbatms behavior message-size num))
+         (connections (map
+                       (lambda (s)
+                         (connect s (random-subset sbatms con-num)))
+                       sbatms)))
+    (pp (sbatms-iterate connections iterations print-iteration))))

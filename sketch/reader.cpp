@@ -97,9 +97,11 @@ bool Reader::detectShift2 (const uint8_t pinRegister, const uint8_t pins) {
    // then mCurrentVal will be 0
    // Otherwise mCurrentVal will be some number.
    mCurrentVal = pinRegister & pins;  
+   //Serial.println(mCurrentVal);
   
    //   lo -> hi                  ||  hi -> lo
    if ((mCurrentVal && !mLastVal) || (!mCurrentVal && mLastVal)) {
+    //Serial.println("shift!");
       mLastVal = mCurrentVal;
       return true;
    }
